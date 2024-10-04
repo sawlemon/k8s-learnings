@@ -71,7 +71,7 @@ spec:
 # spec:
 #   ingressClassName: alb-internal
 #   rules:
-#   - host: go-hello-world-test.use1.dev.admin.aws.viacbs.tech
+#   - host: host-name.com
 #     http:
 #       paths:
 #       - path: /*
