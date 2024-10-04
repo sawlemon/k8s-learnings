@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-hello-world
+  namespace: sandbox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go-hello-world
+  template:
+    metadata:
+      labels:
+        app: go-hello-world
+    spec:
+      containers:
+      - name: go-hello-world
+        image: golang:1.20-alpine
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo 'package main
+
+          import (
+              "fmt"
+              "net/http"
+          )
+
+          func handler(w http.ResponseWriter, r *http.Request) {
+              fmt.Fprintf(w, "Hello, World")
+          }
+
+          func main() {
+              http.HandleFunc("/", handler)
+              http.ListenAndServe(":8080", nil)
+          }' > main.go;
+          go run main.go
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-hello-world
+  namespace: sandbox
+spec:
+  selector:
+    app: go-hello-world
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: go-hello-world-ingress
+#   namespace: sandbox
+#   annotations:
+#     alb.ingress.kubernetes.io/healthcheck-interval-seconds: "5"
+#     alb.ingress.kubernetes.io/healthcheck-path: /hello
+#     alb.ingress.kubernetes.io/healthcheck-port: "4240"
+#     alb.ingress.kubernetes.io/healthcheck-protocol: HTTP
+#     alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "3"
+#     alb.ingress.kubernetes.io/healthy-threshold-count: "5"
+#     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+#     alb.ingress.kubernetes.io/scheme: internal
+#     alb.ingress.kubernetes.io/success-codes: "200"
+#     alb.ingress.kubernetes.io/tags: Name=, Environment=dev
+#     alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+# spec:
+#   ingressClassName: alb-internal
+#   rules:
+#   - host: go-hello-world-test.use1.dev.admin.aws.viacbs.tech
+#     http:
+#       paths:
+#       - path: /*
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: go-hello-world
+#             port:
+#               number: 80
